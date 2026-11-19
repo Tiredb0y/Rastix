@@ -41,13 +41,23 @@ jobs:
           & .\dep\vcpkg\bootstrap-vcpkg.bat -disableMetrics
           if ($LASTEXITCODE -ne 0) { throw 'Could not bootstrap vcpkg.' }
 
+      - name: Download NuGet CLI
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $nuget = Join-Path $env:RUNNER_TEMP 'nuget.exe'
+          Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/v6.12.1/nuget.exe' -OutFile $nuget
+          if (-not (Test-Path $nuget) -or (Get-Item $nuget).Length -lt 1000000) { throw 'NuGet CLI download is missing or incomplete.' }
+          & $nuget -Version
+          if ($LASTEXITCODE -ne 0) { throw 'NuGet CLI could not run.' }
+
       - name: Restore and build unsigned MSIX
         shell: cmd
         run: |
           call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 -host_arch=x64
           if errorlevel 1 exit /b %ERRORLEVEL%
           set "VcpkgRoot=%GITHUB_WORKSPACE%\dep\vcpkg"
-          dep\nuget\nuget.exe restore dep\nuget\packages.config -PackagesDirectory packages -ConfigFile NuGet.config -Verbosity quiet
+          "%RUNNER_TEMP%\nuget.exe" restore dep\nuget\packages.config -PackagesDirectory packages -ConfigFile NuGet.config -Verbosity quiet
           if errorlevel 1 exit /b %ERRORLEVEL%
           msbuild.exe OpenConsole.slnx /t:Terminal\CascadiaPackage /p:Configuration=Release /p:Platform=x64 /p:AppxSymbolPackageEnabled=false /m /v:minimal > build-ci.log 2>&1
           set "BUILD_EXIT=%ERRORLEVEL%"
