@@ -1,430 +1,131 @@
-![Windows Terminal project logos and branding image](https://github.com/microsoft/terminal/assets/91625426/333ddc76-8ab2-4eb4-a8c0-4d7b953b1179)
+# Rastix
 
-> **Persian / RTL users:** This fork contains experimental bidirectional-text changes. See the [Persian guide](README.fa.md) for setup, known limitations, and build downloads. This is an unofficial community build, not a Microsoft release.
+**Rastix** is an unofficial Windows Terminal-based project focused on improving the display of Persian and other right-to-left (RTL) text in command-line applications. It enables bidirectional text support by default and provides a separate `rx` launch alias.
 
-[![Terminal Build Status](https://dev.azure.com/shine-oss/terminal/_apis/build/status%2FTerminal%20CI?branchName=main)](https://dev.azure.com/shine-oss/terminal/_build/latest?definitionId=1&branchName=main)
+Rastix is not an official Microsoft product or release. RTL rendering and editing behavior can vary depending on the application, font, input method, and text being displayed; this project does not promise to solve every shaping, ordering, or editing issue.
 
-# Welcome to the Windows Terminal, Console and Command-Line repo
+## Features
 
-<details>
-  <summary><strong>Table of Contents</strong></summary>
+- Bidirectional text rendering is enabled by default.
+- The development package is branded **Rastix** and uses the `rx` command, avoiding a conflict with the official Windows Terminal `wt` alias.
+- The default PowerShell and Command Prompt profiles start in the current working directory. In File Explorer, enter `rx` in the address bar to open Rastix in the displayed folder.
+- The Explorer context menu includes **Open in Rastix here**.
 
-- [Installing and running Windows Terminal](#installing-and-running-windows-terminal)
-  - [Microsoft Store \[Recommended\]](#microsoft-store-recommended)
-  - [Other install methods](#other-install-methods)
-    - [Via GitHub](#via-github)
-    - [Via Windows Package Manager CLI (aka winget)](#via-windows-package-manager-cli-aka-winget)
-    - [Via Chocolatey (unofficial)](#via-chocolatey-unofficial)
-    - [Via Scoop (unofficial)](#via-scoop-unofficial)
-- [Installing Windows Terminal Canary](#installing-windows-terminal-canary)
-- [Terminal \& Console Overview](#terminal--console-overview)
-  - [Windows Terminal](#windows-terminal)
-  - [The Windows Console Host](#the-windows-console-host)
-  - [Shared Components](#shared-components)
-  - [Creating the new Windows Terminal](#creating-the-new-windows-terminal)
-- [Resources](#resources)
-- [FAQ](#faq)
-  - [I built and ran the new Terminal, but it looks just like the old console](#i-built-and-ran-the-new-terminal-but-it-looks-just-like-the-old-console)
-- [Documentation](#documentation)
-- [Contributing](#contributing)
-- [Communicating with the Team](#communicating-with-the-team)
-- [Developer Guidance](#developer-guidance)
-- [Prerequisites](#prerequisites)
-- [Building the Code](#building-the-code)
-  - [Building in PowerShell](#building-in-powershell)
-  - [Building in Cmd](#building-in-cmd)
-- [Running \& Debugging](#running--debugging)
-  - [Coding Guidance](#coding-guidance)
-- [Code of Conduct](#code-of-conduct)
+## Download and install
 
-</details>
+The project builds an **unsigned MSIX** with GitHub Actions. To get the latest successful build:
 
-<br />
+1. Open [Rastix GitHub Actions](https://github.com/Tiredb0y/Rastix/actions/workflows/rtl-build.yml), select a successful run, and download the `Rastix-unsigned-MSIX` artifact.
+2. Extract the downloaded artifact ZIP. If an earlier Rastix development package is installed, close it first. The package identity is `WindowsTerminalDev`, separate from the official Windows Terminal package. Remove only this development package before registering the new build (some builds may have a lower package version):
 
-This repository contains the source code for:
+   ```powershell
+   Get-AppxPackage WindowsTerminalDev | Remove-AppxPackage
+   ```
 
-* [Windows Terminal](https://aka.ms/terminal)
-* [Windows Terminal Preview](https://aka.ms/terminal-preview)
-* The Windows console host (`conhost.exe`)
-* Components shared between the two projects
-* [ColorTool](./src/tools/ColorTool)
-* [Sample projects](./samples)
-  that show how to consume the Windows Console APIs
+   Back up any settings you want to keep before removal. The package's user data is under `%LOCALAPPDATA%\Packages\WindowsTerminalDev_8wekyb3d8bbwe\LocalState`. Do not use the command above to remove the official Microsoft Windows Terminal.
+3. In PowerShell, from the extracted folder, unpack the MSIX and register its manifest:
 
-Related repositories include:
+   ```powershell
+   $msix = Get-ChildItem . -Filter *.msix -Recurse | Select-Object -First 1
+   if (-not $msix) { throw 'No MSIX found in the extracted artifact.' }
+   makeappx.exe unpack /p $msix.FullName /d .\Rastix-unpacked
+   Add-AppxPackage -Register .\Rastix-unpacked\AppxManifest.xml
+   ```
 
-* [Windows Terminal Documentation](https://docs.microsoft.com/windows/terminal)
-  ([Repo: Contribute to the docs](https://github.com/MicrosoftDocs/terminal))
-* [Console API Documentation](https://github.com/MicrosoftDocs/Console-Docs)
-* [Cascadia Code Font](https://github.com/Microsoft/Cascadia-Code)
+   Windows Developer Mode and the Windows SDK (`makeappx.exe`) are required. If `makeappx.exe` is not on `PATH`, run it from the Windows SDK installation directory. This is an unsigned development package: install it only if you trust the source and build.
 
-## Installing and running Windows Terminal
+After installation, launch Rastix with `rx`. In File Explorer, typing `rx` in the address bar opens it at the folder currently shown. The Explorer context-menu option can also open the selected folder.
 
-> [!NOTE]
-> Windows Terminal requires Windows 10 2004 (build 19041) or later
+**Requirements:** Windows 10 version 2004 (build 19041) or later. GitHub Actions artifacts are temporary build outputs, not signed releases or automatic updates.
 
-### Microsoft Store [Recommended]
+## Persian text and PowerShell
 
-Install the [Windows Terminal from the Microsoft Store][store-install-link].
-This allows you to always be on the latest version when we release new builds
-with automatic upgrades.
-
-This is our preferred method.
-
-### Other install methods
-
-#### Via GitHub
-
-For users who are unable to install Windows Terminal from the Microsoft Store,
-released builds can be manually downloaded from this repository's [Releases
-page](https://github.com/microsoft/terminal/releases).
-
-Download the `Microsoft.WindowsTerminal_<versionNumber>.msixbundle` file from
-the **Assets** section. To install the app, you can simply double-click on the
-`.msixbundle` file, and the app installer should automatically run. If that
-fails for any reason, you can try the following command at a PowerShell prompt:
+RTL display, Arabic/Persian letter shaping, cursor movement, selection, and command-line editing are related but distinct behaviors. Results may differ across shell applications and input methods. Windows PowerShell 5.1 may also use a legacy code page. To use UTF-8 in that shell, you can configure its profile or the relevant Terminal profile to run:
 
 ```powershell
-# NOTE: If you are using PowerShell 7+, please run
-# Import-Module Appx -UseWindowsPowerShell
-# before using Add-AppxPackage.
-
-Add-AppxPackage Microsoft.WindowsTerminal_<versionNumber>.msixbundle
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 ```
 
-> [!NOTE]
-> If you install Terminal manually:
->
-> * You may need to install the [VC++ v14 Desktop Framework Package](https://docs.microsoft.com/troubleshoot/cpp/c-runtime-packages-desktop-bridge#how-to-install-and-update-desktop-framework-packages).
->   This should only be necessary on older builds of Windows 10 and only if you get an error about missing framework packages.
-> * Terminal will not auto-update when new builds are released so you will need
->   to regularly install the latest Terminal release to receive all the latest
->   fixes and improvements!
+This changes text encoding, not text direction. Do not weaken your system's PowerShell execution policy just to apply this setting.
 
-#### Via Windows Package Manager CLI (aka winget)
+## Building
 
-[winget](https://github.com/microsoft/winget-cli) users can download and install
-the latest Terminal release by installing the `Microsoft.WindowsTerminal`
-package:
+This repository has a GitHub Actions workflow that builds an unsigned MSIX. See [the workflow runs](https://github.com/Tiredb0y/Rastix/actions/workflows/rtl-build.yml) for build status and artifacts. For local source builds, the upstream [Windows Terminal build guide](https://github.com/microsoft/terminal/blob/main/doc/building.md) describes the general requirements; this fork's workflow is the reference for its CI build configuration.
 
-```powershell
-winget install --id Microsoft.WindowsTerminal -e
-```
+## Reporting issues
 
-> [!NOTE]
-> Dependency support is available in WinGet version [1.6.2631 or later](https://github.com/microsoft/winget-cli/releases). To install the Terminal stable release 1.18 or later, please make sure you have the updated version of the WinGet client.
+When reporting an issue, include your Windows version, the application producing the text, the font, a copyable example if possible, and whether the problem concerns RTL ordering, letter shaping, input/editing, or encoding. Do not post passwords, access tokens, or other private information.
 
-#### Via Chocolatey (unofficial)
+## Project and license
 
-[Chocolatey](https://chocolatey.org) users can download and install the latest
-Terminal release by installing the `microsoft-windows-terminal` package:
-
-```powershell
-choco install microsoft-windows-terminal
-```
-
-To upgrade Windows Terminal using Chocolatey, run the following:
-
-```powershell
-choco upgrade microsoft-windows-terminal
-```
-
-If you have any issues when installing/upgrading the package please go to the
-[Windows Terminal package
-page](https://chocolatey.org/packages/microsoft-windows-terminal) and follow the
-[Chocolatey triage process](https://chocolatey.org/docs/package-triage-process)
-
-#### Via Scoop (unofficial)
-
-[Scoop](https://scoop.sh) users can download and install the latest Terminal
-release by installing the `windows-terminal` package:
-
-```powershell
-scoop bucket add extras
-scoop install windows-terminal
-```
-
-To update Windows Terminal using Scoop, run the following:
-
-```powershell
-scoop update windows-terminal
-```
-
-If you have any issues when installing/updating the package, please search for
-or report the same on the [issues
-page](https://github.com/lukesampson/scoop-extras/issues) of Scoop Extras bucket
-repository.
+Rastix is based on [Microsoft's Windows Terminal](https://github.com/microsoft/terminal). It is an independent, unofficial project; upstream names and trademarks remain the property of their respective owners. See [LICENSE](LICENSE) and [NOTICE.md](NOTICE.md) for licensing and attribution details.
 
 ---
 
-## Installing Windows Terminal Canary
-Windows Terminal Canary is a nightly build of Windows Terminal. This build has the latest code from our `main` branch, giving you an opportunity to try features before they make it to Windows Terminal Preview.
+# راستیکس
 
-Windows Terminal Canary is our least stable offering, so you may discover bugs before we have had a chance to find them.
+**راستیکس** پروژه‌ای غیررسمی و مبتنی بر Windows Terminal است که بر بهبود نمایش متن فارسی و دیگر متن‌های راست‌به‌چپ (RTL) در برنامه‌های خط فرمان تمرکز دارد. پشتیبانی از متن دوجهته به‌طور پیش‌فرض فعال است و برنامه با نام فرمان جداگانهٔ `rx` اجرا می‌شود.
 
-Windows Terminal Canary is available as an App Installer distribution and a Portable ZIP distribution.
+راستیکس محصول یا انتشار رسمی Microsoft نیست. نمایش و ویرایش متن RTL ممکن است بسته به برنامه، فونت، روش ورود متن و محتوای متن متفاوت باشد؛ این پروژه تضمین نمی‌کند که همهٔ مشکلات شکل‌دهی حروف، ترتیب متن یا ویرایش را برطرف کند.
 
-The App Installer distribution supports automatic updates. Due to platform limitations, this installer only works on Windows 11.
+## ویژگی‌ها
 
-The Portable ZIP distribution is a portable application. It will not automatically update and will not automatically check for updates. This portable ZIP distribution works on Windows 10 (19041+) and Windows 11.
+- نمایش دوجهتهٔ متن به‌طور پیش‌فرض فعال است.
+- بستهٔ توسعه با نام **Rastix** و فرمان `rx` ارائه می‌شود و با نام `wt` در Windows Terminal رسمی تداخل ندارد.
+- پروفایل‌های پیش‌فرض PowerShell و Command Prompt از پوشهٔ جاری شروع می‌شوند. در نوار نشانی File Explorer بنویسید `rx` تا برنامه در پوشهٔ نمایش‌داده‌شده باز شود.
+- گزینهٔ **Open in Rastix here** در منوی زمینهٔ File Explorer وجود دارد.
 
-| Distribution  | Architecture    | Link                                                 |
-|---------------|:---------------:|------------------------------------------------------|
-| App Installer | x64, arm64, x86 | [Download](https://aka.ms/terminal-canary-installer) |
-| Portable ZIP  | x64             | [Download](https://aka.ms/terminal-canary-zip-x64)   |
-| Portable ZIP  | ARM64           | [Download](https://aka.ms/terminal-canary-zip-arm64) |
-| Portable ZIP  | x86             | [Download](https://aka.ms/terminal-canary-zip-x86)   |
+## دریافت و نصب
 
-_Learn more about the [types of Windows Terminal distributions](https://learn.microsoft.com/windows/terminal/distributions)._
+GitHub Actions یک بستهٔ **MSIX امضانشده** می‌سازد. برای دریافت آخرین ساخت موفق:
 
----
+1. به [اجرای GitHub Actions راستیکس](https://github.com/Tiredb0y/Rastix/actions/workflows/rtl-build.yml) بروید، یک اجرای موفق را باز کنید و artifact با نام `Rastix-unsigned-MSIX` را دریافت کنید.
+2. فایل ZIP دریافت‌شده را استخراج کنید. اگر نسخهٔ توسعهٔ قبلی راستیکس نصب است، ابتدا برنامه را ببندید. هویت بسته `WindowsTerminalDev` است و از بستهٔ رسمی Windows Terminal جداست. پیش از ثبت build جدید، نسخهٔ توسعهٔ قبلی را حذف کنید (ممکن است شمارهٔ نسخهٔ بعضی buildها پایین‌تر باشد):
 
-## Terminal & Console Overview
+   ```powershell
+   Get-AppxPackage WindowsTerminalDev | Remove-AppxPackage
+   ```
 
-Please take a few minutes to review the overview below before diving into the
-code:
+   اگر تنظیماتی را لازم دارید، پیش از حذف از آن‌ها پشتیبان بگیرید. داده‌های کاربری بسته در مسیر `%LOCALAPPDATA%\Packages\WindowsTerminalDev_8wekyb3d8bbwe\LocalState` قرار دارد. این فرمان را برای حذف Windows Terminal رسمی Microsoft به‌کار نبرید.
+3. در PowerShell و از پوشهٔ استخراج‌شده، MSIX را باز و manifest آن را ثبت کنید:
 
-### Windows Terminal
+   ```powershell
+   $msix = Get-ChildItem . -Filter *.msix -Recurse | Select-Object -First 1
+   if (-not $msix) { throw 'No MSIX found in the extracted artifact.' }
+   makeappx.exe unpack /p $msix.FullName /d .\Rastix-unpacked
+   Add-AppxPackage -Register .\Rastix-unpacked\AppxManifest.xml
+   ```
 
-Windows Terminal is a new, modern, feature-rich, productive terminal application
-for command-line users. It includes many of the features most frequently
-requested by the Windows command-line community including support for tabs, rich
-text, globalization, configurability, theming & styling, and more.
+   Developer Mode ویندوز و Windows SDK (ابزار `makeappx.exe`) لازم است. اگر `makeappx.exe` در `PATH` نیست، آن را از پوشهٔ نصب Windows SDK اجرا کنید. این بستهٔ توسعه امضا نشده است؛ فقط در صورتی نصبش کنید که به منبع و فایل ساخت اعتماد دارید.
 
-The Terminal will also need to meet our goals and measures to ensure it remains
-fast and efficient, and doesn't consume vast amounts of memory or power.
+پس از نصب، راستیکس را با `rx` اجرا کنید. در File Explorer، نوشتن `rx` در نوار نشانی برنامه را در پوشهٔ فعلی باز می‌کند. همچنین می‌توانید از گزینهٔ منوی زمینه برای بازکردن پوشهٔ انتخاب‌شده استفاده کنید.
 
-### The Windows Console Host
+**پیش‌نیاز:** Windows 10 نسخهٔ 2004 (ساخت 19041) یا جدیدتر. artifactهای GitHub Actions فایل‌های موقت ساخت هستند؛ انتشار امضاشده یا به‌روزرسانی خودکار محسوب نمی‌شوند.
 
-The Windows Console host, `conhost.exe`, is Windows' original command-line user
-experience. It also hosts Windows' command-line infrastructure and the Windows
-Console API server, input engine, rendering engine, user preferences, etc. The
-console host code in this repository is the actual source from which the
-`conhost.exe` in Windows itself is built.
+## متن فارسی و PowerShell
 
-Since taking ownership of the Windows command-line in 2014, the team added
-several new features to the Console, including background transparency,
-line-based selection, support for [ANSI / Virtual Terminal
-sequences](https://en.wikipedia.org/wiki/ANSI_escape_code), [24-bit
-color](https://devblogs.microsoft.com/commandline/24-bit-color-in-the-windows-console/),
-a [Pseudoconsole
-("ConPTY")](https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/),
-and more.
-
-However, because Windows Console's primary goal is to maintain backward
-compatibility, we have been unable to add many of the features the community
-(and the team) have been wanting for the last several years including tabs,
-unicode text, and emoji.
-
-These limitations led us to create the new Windows Terminal.
-
-> You can read more about the evolution of the command-line in general, and the
-> Windows command-line specifically in [this accompanying series of blog
-> posts](https://devblogs.microsoft.com/commandline/windows-command-line-backgrounder/)
-> on the Command-Line team's blog.
-
-### Shared Components
-
-While overhauling Windows Console, we modernized its codebase considerably,
-cleanly separating logical entities into modules and classes, introduced some
-key extensibility points, replaced several old, home-grown collections and
-containers with safer, more efficient [STL
-containers](https://docs.microsoft.com/en-us/cpp/standard-library/stl-containers?view=vs-2022),
-and made the code simpler and safer by using Microsoft's [Windows Implementation
-Libraries - WIL](https://github.com/Microsoft/wil).
-
-This overhaul resulted in several of Console's key components being available
-for re-use in any terminal implementation on Windows. These components include a
-new DirectWrite-based text layout and rendering engine, a text buffer capable of
-storing both UTF-16 and UTF-8, a VT parser/emitter, and more.
-
-### Creating the new Windows Terminal
-
-When we started planning the new Windows Terminal application, we explored and
-evaluated several approaches and technology stacks. We ultimately decided that
-our goals would be best met by continuing our investment in our C++ codebase,
-which would allow us to reuse several of the aforementioned modernized
-components in both the existing Console and the new Terminal. Further, we
-realized that this would allow us to build much of the Terminal's core itself as
-a reusable UI control that others can incorporate into their own applications.
-
-The result of this work is contained within this repo and delivered as the
-Windows Terminal application you can download from the Microsoft Store, or
-[directly from this repo's
-releases](https://github.com/microsoft/terminal/releases).
-
----
-
-## Resources
-
-For more information about Windows Terminal, you may find some of these
-resources useful and interesting:
-
-* [Command-Line Blog](https://devblogs.microsoft.com/commandline)
-* [Command-Line Backgrounder Blog
-  Series](https://devblogs.microsoft.com/commandline/windows-command-line-backgrounder/)
-* Windows Terminal Launch: [Terminal "Sizzle
-  Video"](https://www.youtube.com/watch?v=8gw0rXPMMPE&list=PLEHMQNlPj-Jzh9DkNpqipDGCZZuOwrQwR&index=2&t=0s)
-* Windows Terminal Launch: [Build 2019
-  Session](https://www.youtube.com/watch?v=KMudkRcwjCw)
-* Run As Radio: [Show 645 - Windows Terminal with Richard
-  Turner](https://www.runasradio.com/Shows/Show/645)
-* Azure DevOps Podcast: [Episode 54 - Kayla Cinnamon and Rich Turner on DevOps
-  on the Windows
-  Terminal](http://azuredevopspodcast.clear-measure.com/kayla-cinnamon-and-rich-turner-on-devops-on-the-windows-terminal-team-episode-54)
-* Microsoft Ignite 2019 Session: [The Modern Windows Command Line: Windows
-  Terminal -
-  BRK3321](https://myignite.techcommunity.microsoft.com/sessions/81329?source=sessions)
-
----
-
-## FAQ
-
-### I built and ran the new Terminal, but it looks just like the old console
-
-Cause: You're launching the incorrect solution in Visual Studio.
-
-Solution: Make sure you're building & deploying the `CascadiaPackage` project in
-Visual Studio.
-
-> [!NOTE]
-> `OpenConsole.exe` is just a locally-built `conhost.exe`, the classic
-> Windows Console that hosts Windows' command-line infrastructure. OpenConsole
-> is used by Windows Terminal to connect to and communicate with command-line
-> applications (via
-> [ConPty](https://devblogs.microsoft.com/commandline/windows-command-line-introducing-the-windows-pseudo-console-conpty/)).
-
----
-
-## Documentation
-
-All project documentation is located at [aka.ms/terminal-docs](https://aka.ms/terminal-docs). If you would like
-to contribute to the documentation, please submit a pull request on the [Windows
-Terminal Documentation repo](https://github.com/MicrosoftDocs/terminal).
-
----
-
-## Contributing
-
-We are excited to work alongside you, our amazing community, to build and
-enhance Windows Terminal\!
-
-***BEFORE you start work on a feature/fix***, please read & follow our
-[Contributor's
-Guide](./CONTRIBUTING.md) to
-help avoid any wasted or duplicate effort.
-
-## Communicating with the Team
-
-The easiest way to communicate with the team is via GitHub issues.
-
-Please file new issues, feature requests and suggestions, but **DO search for
-similar open/closed preexisting issues before creating a new issue.**
-
-If you would like to ask a question that you feel doesn't warrant an issue
-(yet), please reach out to us via Twitter:
-
-* Christopher Nguyen, Product Manager:
-  [@nguyen_dows](https://twitter.com/nguyen_dows)
-* Dustin Howett, Engineering Lead: [@dhowett](https://twitter.com/DHowett)
-* Mike Griese, Senior Developer: [@zadjii@mastodon.social](https://mastodon.social/@zadjii)
-* Carlos Zamora, Developer: [@cazamor_msft](https://twitter.com/cazamor_msft)
-* Pankaj Bhojwani, Developer
-* Leonard Hecker, Developer: [@LeonardHecker](https://twitter.com/LeonardHecker)
-
-## Developer Guidance
-
-## Prerequisites
-
-You can configure your environment to build Terminal in one of two ways:
-
-### Using WinGet configuration file
-
-After cloning the repository, you can use a [WinGet configuration file](https://learn.microsoft.com/en-us/windows/package-manager/configuration/#use-a-winget-configuration-file-to-configure-your-machine)
-to set up your environment. The [default configuration file](.config/configuration.winget) installs Visual Studio 2026 Community & rest of the required tools. There are two other variants of the configuration file available in the [.config](.config) directory for Enterprise & Professional editions of Visual Studio 2026. To run the default configuration file, you can either double-click the file from explorer or run the following command:
+نمایش RTL، شکل‌دهی حروف فارسی/عربی، حرکت مکان‌نما، انتخاب متن و ویرایش خط فرمان رفتارهای مرتبط اما جداگانه‌اند. نتیجه ممکن است در پوسته‌ها و روش‌های ورود متن مختلف فرق کند. Windows PowerShell 5.1 نیز ممکن است از code page قدیمی استفاده کند. برای فعال‌کردن UTF-8 در آن، می‌توانید در پروفایل PowerShell یا پروفایل مربوط در Terminal این دستورها را اجرا کنید:
 
 ```powershell
-winget configure .config\configuration.winget
+$utf8 = [System.Text.UTF8Encoding]::new($false)
+[Console]::InputEncoding = $utf8
+[Console]::OutputEncoding = $utf8
+$OutputEncoding = $utf8
 ```
 
-### Manual configuration
+این تنظیم کدگذاری متن را تغییر می‌دهد، نه جهت نمایش آن. برای استفاده از این تنظیم، سیاست امنیتی اجرای PowerShell را تضعیف نکنید.
 
-* You must be running Windows 10 2004 (build >= 10.0.19041.0) or later to run
-  Windows Terminal
-* You must [enable Developer Mode in the Windows Settings
-  app](https://docs.microsoft.com/en-us/windows/uwp/get-started/enable-your-device-for-development)
-  to locally install and run Windows Terminal
-* You must have [PowerShell 7 or later](https://github.com/PowerShell/PowerShell/releases/latest) installed
-* You must have the [Windows 11 (10.0.26100) SDK](https://developer.microsoft.com/en-us/windows/downloads/windows-sdk/) installed at version 10.0.26100.8249 or greater.
-* You must have at least [VS 2026](https://visualstudio.microsoft.com/downloads/) version 18.6 installed
-* You must install the following Workloads via the VS Installer. Note: Opening
-  the solution will [prompt you to install missing components automatically](https://devblogs.microsoft.com/setup/configure-visual-studio-across-your-organization-with-vsconfig/):
-  * Desktop Development with C++
-  * WinUI application development
-* You must install the [.NET Framework 4.7.2 Targeting Pack](https://docs.microsoft.com/dotnet/framework/install/guide-for-developers#to-install-the-net-framework-developer-pack-or-targeting-pack) to build test projects
+## ساخت
 
-## Building the Code
+این مخزن workflow مربوط به ساخت MSIX امضانشده را در GitHub Actions دارد. وضعیت ساخت و artifactها در [اجرای workflow](https://github.com/Tiredb0y/Rastix/actions/workflows/rtl-build.yml) در دسترس‌اند. برای ساخت محلی از کد منبع، [راهنمای ساخت Windows Terminal](https://github.com/microsoft/terminal/blob/main/doc/building.md) پیش‌نیازهای عمومی را توضیح می‌دهد؛ workflow این مخزن مرجع تنظیمات ساخت CI راستیکس است.
 
-OpenConsole.slnx may be built from within Visual Studio or from the command-line
-using a set of convenience scripts & tools in the **/tools** directory:
+## گزارش مشکل
 
-### Building in PowerShell
+هنگام گزارش مشکل، نسخهٔ ویندوز، برنامه‌ای که متن را تولید می‌کند، فونت، نمونه‌ای از متن (در صورت امکان قابل کپی)، و نوع مشکل—ترتیب RTL، شکل‌دهی حروف، ورودی/ویرایش یا کدگذاری—را ذکر کنید. رمز عبور، token یا اطلاعات خصوصی نفرستید.
 
-```powershell
-Import-Module .\tools\OpenConsole.psm1
-Set-MsBuildDevEnvironment
-Invoke-OpenConsoleBuild
-```
+## پروژه و مجوز
 
-### Building in Cmd
-
-```shell
-.\tools\razzle.cmd
-bcz
-```
-
-## Running & Debugging
-
-To debug the Windows Terminal in VS, right click on `CascadiaPackage` (in the
-Solution Explorer) and go to properties. In the Debug menu, change "Application
-process" and "Background task process" to "Native Only".
-
-You should then be able to build & debug the Terminal project by hitting
-<kbd>F5</kbd>. Make sure to select either the "x64" or the "x86" platform - the
-Terminal doesn't build for "Any Cpu" (because the Terminal is a C++ application,
-not a C# one).
-
-> 👉 You will _not_ be able to launch the Terminal directly by running the
-> WindowsTerminal.exe. For more details on why, see
-> [#926](https://github.com/microsoft/terminal/issues/926),
-> [#4043](https://github.com/microsoft/terminal/issues/4043)
-
-### Coding Guidance
-
-Please review these brief docs below about our coding practices.
-
-> 👉 If you find something missing from these docs, feel free to contribute to
-> any of our documentation files anywhere in the repository (or write some new
-> ones!)
-
-This is a work in progress as we learn what we'll need to provide people in
-order to be effective contributors to our project.
-
-* [Coding Style](./doc/STYLE.md)
-* [Code Organization](./doc/ORGANIZATION.md)
-* [Exceptions in our legacy codebase](./doc/EXCEPTIONS.md)
-* [Helpful smart pointers and macros for interfacing with Windows in WIL](./doc/WIL.md)
-
----
-
-## Code of Conduct
-
-This project has adopted the [Microsoft Open Source Code of
-Conduct][conduct-code]. For more information see the [Code of Conduct
-FAQ][conduct-FAQ] or contact [opencode@microsoft.com][conduct-email] with any
-additional questions or comments.
-
-[conduct-code]: https://opensource.microsoft.com/codeofconduct/
-[conduct-FAQ]: https://opensource.microsoft.com/codeofconduct/faq/
-[conduct-email]: mailto:opencode@microsoft.com
-[store-install-link]: https://aka.ms/terminal
+راستیکس بر پایهٔ [Windows Terminal مایکروسافت](https://github.com/microsoft/terminal) ساخته شده است. این پروژه مستقل و غیررسمی است؛ نام‌ها و علامت‌های تجاری بالادستی متعلق به صاحبان مربوطه هستند. برای اطلاعات مجوز و انتساب، فایل‌های [LICENSE](LICENSE) و [NOTICE.md](NOTICE.md) را ببینید.
