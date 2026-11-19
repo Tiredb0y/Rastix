@@ -1,0 +1,72 @@
+name: Build RTL Windows Terminal
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - rtl-build
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-2025-vs2026
+    timeout-minutes: 240
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install repository Visual Studio components
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $vsInstall = 'C:\Program Files\Microsoft Visual Studio\18\Enterprise'
+          if (-not (Test-Path $vsInstall)) { throw 'VS 2026 Enterprise was not found on the runner.' }
+          $setup = 'C:\Program Files (x86)\Microsoft Visual Studio\Installer\setup.exe'
+          $arguments = "modify --installPath `"$vsInstall`" --config .vsconfig --quiet --norestart"
+          $installer = Start-Process -FilePath $setup -ArgumentList $arguments -Wait -PassThru
+          if ($installer.ExitCode -ne 0 -and $installer.ExitCode -ne 3010) { throw "Visual Studio component installation failed with exit code $($installer.ExitCode)." }
+
+      - name: Set up pinned vcpkg
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $baseline = '927f62e4b8838bd7e441e9c45103a16ffd75007e'
+          git clone https://github.com/microsoft/vcpkg.git dep/vcpkg
+          if ($LASTEXITCODE -ne 0) { throw 'Could not clone vcpkg.' }
+          git -C dep/vcpkg checkout $baseline
+          if ($LASTEXITCODE -ne 0) { throw 'Could not check out the repository vcpkg baseline.' }
+          & .\dep\vcpkg\bootstrap-vcpkg.bat -disableMetrics
+          if ($LASTEXITCODE -ne 0) { throw 'Could not bootstrap vcpkg.' }
+
+      - name: Restore and build unsigned MSIX
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 -host_arch=x64
+          if errorlevel 1 exit /b %ERRORLEVEL%
+          set "VcpkgRoot=%GITHUB_WORKSPACE%\dep\vcpkg"
+          dep\nuget\nuget.exe restore dep\nuget\packages.config -PackagesDirectory packages -ConfigFile NuGet.config -Verbosity quiet
+          if errorlevel 1 exit /b %ERRORLEVEL%
+          msbuild.exe OpenConsole.slnx /t:Terminal\CascadiaPackage /p:Configuration=Release /p:Platform=x64 /p:AppxSymbolPackageEnabled=false /m /v:minimal > build-ci.log 2>&1
+          set "BUILD_EXIT=%ERRORLEVEL%"
+          type build-ci.log
+          exit /b %BUILD_EXIT%
+
+      - name: Upload build log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: WindowsTerminal-RTL-build-log
+          path: build-ci.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+      - name: Upload MSIX
+        uses: actions/upload-artifact@v4
+        with:
+          name: WindowsTerminal-RTL-unsigned-MSIX
+          path: src/cascadia/CascadiaPackage/AppPackages/**/*.msix
+          if-no-files-found: error
+          retention-days: 7
