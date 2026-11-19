@@ -37,7 +37,8 @@ $priConfig = Join-Path $tempDir "priconfig.xml"
 $priListFile = Join-Path $tempDir "pri.resfiles"
 $dumpListFile = Join-Path $tempDir "dump.resfiles"
 
-@"
+$utf8 = New-Object System.Text.UTF8Encoding($false)
+$priConfigContent = @"
 <?xml version="1.0" encoding="utf-8"?>
 <resources targetOsVersion="10.0.0" majorVersion="1">
   <index root="\" startIndexAt="dump.resfiles">
@@ -73,16 +74,20 @@ $dumpListFile = Join-Path $tempDir "dump.resfiles"
     <indexer-config type="RESFILES" qualifierDelimiter="." />
   </index>
 </resources>
-"@ | Out-File -Encoding:utf8NoBOM $priConfig
+"@
+[System.IO.File]::WriteAllText($priConfig, $priConfigContent, $utf8)
 
-$Path | Where { $_ -Like "*.pri" } | ForEach-Object {
-    Get-Item $_ | Select -Expand FullName
-} | Out-File -Encoding:utf8NoBOM $priListFile
+$priPaths = @($Path | Where-Object { $_ -Like "*.pri" } | ForEach-Object {
+    (Get-Item $_).FullName
+})
+[System.IO.File]::WriteAllLines($priListFile, [string[]]$priPaths, $utf8)
 
-$Path | Where { $_ -Like "*.xml" } | ForEach-Object {
-    Get-Item $_ | Select -Expand FullName
-} | Out-File -Encoding:utf8NoBOM $dumpListFile
+$dumpPaths = @($Path | Where-Object { $_ -Like "*.xml" } | ForEach-Object {
+    (Get-Item $_).FullName
+})
+[System.IO.File]::WriteAllLines($dumpListFile, [string[]]$dumpPaths, $utf8)
 
 & $MakePriPath new /pr $tempDir /cf $priConfig /o /in $IndexName /of $OutputPath
+If ($LASTEXITCODE -Ne 0) { throw 'Could not merge PRI resources.' }
 
 Remove-Item -Recurse -Force $tempDir

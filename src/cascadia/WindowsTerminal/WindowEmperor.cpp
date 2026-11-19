@@ -492,8 +492,8 @@ void WindowEmperor::HandleCommandlineArgs(int nCmdShow)
     windowClassName.append(L"Windows Terminal Canary");
     unpackagedAumid = L"Microsoft.WindowsTerminalCanary";
 #else
-    windowClassName.append(L"Windows Terminal Dev");
-    unpackagedAumid = L"WindowsTerminalDev";
+    windowClassName.append(L"Rastix");
+    unpackagedAumid = L"Rastix";
 #endif
     if (Utils::IsRunningElevated())
     {

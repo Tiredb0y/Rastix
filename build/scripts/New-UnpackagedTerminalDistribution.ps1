@@ -38,10 +38,18 @@ $filesToKeep = @() # ... except for these
 $filesToCopyFromXaml = @("Microsoft.UI.Xaml.dll", "Microsoft.UI.Xaml") # We don't need the .winmd
 
 $ErrorActionPreference = 'Stop'
+$tar = Join-Path $env:SystemRoot 'System32\tar.exe'
 
 If (-not $MakeAppxPath) {
   $winSdk10Root = $(Get-ItemPropertyValue -Path "HKLM:\Software\Microsoft\Windows Kits\Installed Roots" -Name "KitsRoot10")
-  $MakeAppxPath = "$winSdk10Root\bin\10.0.26100.0\x64\MakeAppx.exe"
+  $sdkBin = Join-Path $winSdk10Root 'bin'
+  $sdk = Get-ChildItem $sdkBin -Directory | Where-Object {
+      $_.Name -match '^10\.0\.\d+\.0$' -and
+      (Test-Path (Join-Path $_.FullName 'x64\MakeAppx.exe')) -and
+      (Test-Path (Join-Path $_.FullName 'x64\MakePri.exe'))
+  } | Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
+  If (-not $sdk) { throw "No Windows SDK with x64 MakeAppx.exe and MakePri.exe was found under $sdkBin." }
+  $MakeAppxPath = Join-Path $sdk.FullName 'x64\MakeAppx.exe'
 }
 
 If ($null -Eq (Get-Item $MakeAppxPath -EA:SilentlyContinue)) {
@@ -60,7 +68,8 @@ $XamlAppX = Get-Item $XamlAppX | Select-Object -Expand FullName
 
 If ($TerminalAppX) {
 	$appxManifestPath = Join-Path $tempDir AppxManifest.xml
-	& tar.exe -x -f "$TerminalAppX" -C $tempDir AppxManifest.xml
+	& $tar -x -f "$TerminalAppX" -C $tempDir AppxManifest.xml
+	If ($LASTEXITCODE -Ne 0) { throw 'Could not extract the Terminal package manifest.' }
 } ElseIf($TerminalLayout) {
 	$appxManifestPath = Join-Path $TerminalLayout AppxManifest.xml
 }
@@ -132,6 +141,7 @@ $finalTerminalPriFile = Join-Path $terminalAppPath "resources.pri"
     -TerminalRoot $terminalAppPath `
     -XamlRoot $xamlAppPath `
     -OutputPath $finalTerminalPriFile `
+    -MakePriPath (Join-Path (Split-Path $MakeAppxPath) 'MakePri.exe') `
     -Verbose:$Verbose | Out-Host
 
 ########
@@ -147,7 +157,8 @@ If ($PSCmdlet.ParameterSetName -Eq "AppX") {
 	# We only produce a ZIP when we're combining two AppX directories.
 	New-Item -ItemType Directory -Path $Destination -ErrorAction:SilentlyContinue | Out-Null
 	$outputZip = (Join-Path $Destination ("{0}.zip" -f ($distributionName)))
-	& tar -c --format=zip -f $outputZip -C $tempDir $terminalDir
+	& $tar -c --format=zip -f $outputZip -C $tempDir $terminalDir
+	If ($LASTEXITCODE -Ne 0) { throw 'Could not create the unpackaged Terminal ZIP.' }
 	Remove-Item -Recurse -Force $tempDir -EA:SilentlyContinue
 	Get-Item $outputZip
 } ElseIf ($PSCmdlet.ParameterSetName -Eq "Layout") {

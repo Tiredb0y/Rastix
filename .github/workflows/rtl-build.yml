@@ -1,4 +1,4 @@
-name: Build Rastix (RTL Windows Terminal)
+name: Build Rastix Windows release
 
 on:
   workflow_dispatch:
@@ -6,9 +6,11 @@ on:
     branches:
       - main
       - rtl-build
+    tags:
+      - 'rastix-v*'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -17,6 +19,17 @@ jobs:
     steps:
       - name: Check out source
         uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Validate release tag
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: pwsh
+        run: |
+          [xml]$manifest = Get-Content src/cascadia/CascadiaPackage/Package-Dev.appxmanifest
+          $version = [version]$manifest.Package.Identity.Version
+          $expected = "rastix-v$($version.Major).$($version.Minor).$($version.Build)"
+          if ($env:GITHUB_REF_NAME -ne $expected) { throw "Expected tag $expected, got $env:GITHUB_REF_NAME." }
 
       - name: Install repository Visual Studio components
         shell: pwsh
@@ -28,6 +41,10 @@ jobs:
           $arguments = "modify --installPath `"$vsInstall`" --config .vsconfig --quiet --norestart"
           $installer = Start-Process -FilePath $setup -ArgumentList $arguments -Wait -PassThru
           if ($installer.ExitCode -ne 0 -and $installer.ExitCode -ne 3010) { throw "Visual Studio component installation failed with exit code $($installer.ExitCode)." }
+
+      - name: Test installer verification and reject invalid payloads
+        shell: pwsh
+        run: ./installer/Test-Installer.ps1
 
       - name: Set up pinned vcpkg
         shell: pwsh
@@ -49,7 +66,7 @@ jobs:
           Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/v6.12.1/nuget.exe' -OutFile $nuget
           if (-not (Test-Path $nuget) -or (Get-Item $nuget).Length -lt 1000000) { throw 'NuGet CLI download is missing or incomplete.' }
 
-      - name: Restore and build unsigned MSIX
+      - name: Build unsigned package for unpackaged layout generation
         shell: cmd
         run: |
           call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 -host_arch=x64
@@ -62,6 +79,10 @@ jobs:
           type build-ci.log
           exit /b %BUILD_EXIT%
 
+      - name: Build and verify unsigned Rastix installer and portable ZIP
+        shell: pwsh
+        run: ./installer/Build-Installer.ps1
+
       - name: Upload build log
         if: always()
         uses: actions/upload-artifact@v4
@@ -71,10 +92,26 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
-      - name: Upload MSIX
+      - name: Upload Windows artifacts for CI builds
+        if: startsWith(github.ref, 'refs/heads/') || github.event_name == 'workflow_dispatch'
         uses: actions/upload-artifact@v4
         with:
-          name: Rastix-unsigned-MSIX
-          path: src/cascadia/CascadiaPackage/AppPackages/**/*.msix
+          name: Rastix-Windows-x64
+          path: |
+            out/release/Rastix-Setup-v*.exe
+            out/release/Rastix-Portable-v*.zip
+            out/release/SHA256SUMS.txt
           if-no-files-found: error
-          retention-days: 7
+          retention-days: 14
+
+      - name: Attach EXE, portable ZIP, and hashes to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/rastix-v')
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Rastix ${{ github.ref_name }}
+          fail_on_unmatched_files: true
+          generate_release_notes: true
+          files: |
+            out/release/Rastix-Setup-v*.exe
+            out/release/Rastix-Portable-v*.zip
+            out/release/SHA256SUMS.txt

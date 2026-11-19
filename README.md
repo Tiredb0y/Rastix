@@ -7,36 +7,24 @@ Rastix is not an official Microsoft product or release. RTL rendering and editin
 ## Features
 
 - Bidirectional text rendering is enabled by default.
-- The development package is branded **Rastix** and uses the `rx` command, avoiding a conflict with the official Windows Terminal `wt` alias.
+- Rastix is branded independently and provides an `rx` executable/command without replacing Windows Terminal's `wt` alias.
 - The default PowerShell and Command Prompt profiles start in the current working directory. In File Explorer, enter `rx` in the address bar to open Rastix in the displayed folder.
-- The Explorer context menu includes **Open in Rastix here**.
+- Packaged development builds include **Open in Rastix here** in the Explorer context menu. The setup EXE and portable ZIP do not register this menu entry.
 
 ## Download and install
 
-The project builds an **unsigned MSIX** with GitHub Actions. To get the latest successful build:
+When the `rastix-v0.1.1` release is published, download **Rastix-Setup-v0.1.1.exe** from [GitHub Releases](https://github.com/Tiredb0y/Rastix/releases). The setup installs the unpackaged portable layout for the current user under `%LOCALAPPDATA%\Programs\Rastix\0.1.1` and creates a Start menu shortcut. It does not register an MSIX, require Developer Mode, elevate, or install/trust a certificate. Settings are stored in the installation's `settings` folder; back up that folder before uninstalling. Use the **Uninstall Rastix** Start menu shortcut to remove the app, its settings folder, and the PATH entry. This release does not yet support in-place upgrades; uninstall an older version before installing a newer one.
 
-1. Open [Rastix GitHub Actions](https://github.com/Tiredb0y/Rastix/actions/workflows/rtl-build.yml), select a successful run, and download the `Rastix-unsigned-MSIX` artifact.
-2. Extract the downloaded artifact ZIP. If an earlier Rastix development package is installed, close it first. The package identity is `WindowsTerminalDev`, separate from the official Windows Terminal package. Remove only this development package before registering the new build (some builds may have a lower package version):
+A **Rastix-Portable-v0.1.1.zip** is planned for the same release; extract it and run `WindowsTerminal.exe`. Its `.portable` marker makes settings stay beside the app. The installer also adds its folder to your user `PATH`, so new terminals can launch `rx` from any directory; restart existing terminals after installation. If you remove the install manually, also remove its `%LOCALAPPDATA%\Programs\Rastix\0.1.1` entry from your user PATH.
 
-   ```powershell
-   Get-AppxPackage WindowsTerminalDev | Remove-AppxPackage
-   ```
+Both the setup EXE and portable ZIP are **unsigned**. Windows SmartScreen may show an **Unknown publisher** warning, and reputation-based protection may block or warn about first-time downloads. No fake or self-signed certificate is used. This is separate from the prior unsigned MSIX installation issue: the public release no longer asks Windows to trust/register an MSIX publisher. Do not disable SmartScreen or security protections just to install Rastix; only continue if you trust the source and have verified the release hashes. To compare the published SHA-256 values in PowerShell, run this from the folder containing the downloaded files and `SHA256SUMS.txt`:
 
-   Back up any settings you want to keep before removal. The package's user data is under `%LOCALAPPDATA%\Packages\WindowsTerminalDev_8wekyb3d8bbwe\LocalState`. Do not use the command above to remove the official Microsoft Windows Terminal.
-3. In PowerShell, from the extracted folder, unpack the MSIX and register its manifest:
+```powershell
+Get-FileHash .\Rastix-Setup-v0.1.1.exe, .\Rastix-Portable-v0.1.1.zip -Algorithm SHA256
+Get-Content .\SHA256SUMS.txt
+```
 
-   ```powershell
-   $msix = Get-ChildItem . -Filter *.msix -Recurse | Select-Object -First 1
-   if (-not $msix) { throw 'No MSIX found in the extracted artifact.' }
-   makeappx.exe unpack /p $msix.FullName /d .\Rastix-unpacked
-   Add-AppxPackage -Register .\Rastix-unpacked\AppxManifest.xml
-   ```
-
-   Windows Developer Mode and the Windows SDK (`makeappx.exe`) are required. If `makeappx.exe` is not on `PATH`, run it from the Windows SDK installation directory. This is an unsigned development package: install it only if you trust the source and build.
-
-After installation, launch Rastix with `rx`. In File Explorer, typing `rx` in the address bar opens it at the folder currently shown. The Explorer context-menu option can also open the selected folder.
-
-**Requirements:** Windows 10 version 2004 (build 19041) or later. GitHub Actions artifacts are temporary build outputs, not signed releases or automatic updates.
+**Requirements:** Windows 10 version 2004 (build 19041) or later, x64. The EXE is an installer, not a signed or self-updating package.
 
 ## Persian text and PowerShell
 
@@ -53,7 +41,7 @@ This changes text encoding, not text direction. Do not weaken your system's Powe
 
 ## Building
 
-This repository has a GitHub Actions workflow that builds an unsigned MSIX. See [the workflow runs](https://github.com/Tiredb0y/Rastix/actions/workflows/rtl-build.yml) for build status and artifacts. For local source builds, the upstream [Windows Terminal build guide](https://github.com/microsoft/terminal/blob/main/doc/building.md) describes the general requirements; this fork's workflow is the reference for its CI build configuration.
+GitHub Actions builds an unsigned package internally as an input to the repository's supported unpackaged-layout generation script, then packages that layout as a setup EXE and portable ZIP. The unsigned MSIX is not published. Tags matching `rastix-v*` trigger builds and attach the EXE, ZIP, and SHA-256 sums to the GitHub Release. See [workflow runs](https://github.com/Tiredb0y/Rastix/actions/workflows/rtl-build.yml) for CI results. For local builds, see the upstream [Windows Terminal build guide](https://github.com/microsoft/terminal/blob/main/doc/building.md).
 
 ## Reporting issues
 
@@ -74,36 +62,24 @@ Rastix is based on [Microsoft's Windows Terminal](https://github.com/microsoft/t
 ## ویژگی‌ها
 
 - نمایش دوجهتهٔ متن به‌طور پیش‌فرض فعال است.
-- بستهٔ توسعه با نام **Rastix** و فرمان `rx` ارائه می‌شود و با نام `wt` در Windows Terminal رسمی تداخل ندارد.
+- راستیکس با نام مستقل و فرمان `rx` ارائه می‌شود و نام `wt` در Windows Terminal رسمی را جایگزین نمی‌کند.
 - پروفایل‌های پیش‌فرض PowerShell و Command Prompt از پوشهٔ جاری شروع می‌شوند. در نوار نشانی File Explorer بنویسید `rx` تا برنامه در پوشهٔ نمایش‌داده‌شده باز شود.
-- گزینهٔ **Open in Rastix here** در منوی زمینهٔ File Explorer وجود دارد.
+- گزینهٔ **Open in Rastix here** در منوی زمینهٔ File Explorer مربوط به ساخت توسعهٔ packaged است؛ نصب‌کنندهٔ EXE و ZIP قابل‌حمل این گزینه را ثبت نمی‌کنند.
 
 ## دریافت و نصب
 
-GitHub Actions یک بستهٔ **MSIX امضانشده** می‌سازد. برای دریافت آخرین ساخت موفق:
+پس از انتشار نسخهٔ `rastix-v0.1.1`، فایل **Rastix-Setup-v0.1.1.exe** را از [GitHub Releases](https://github.com/Tiredb0y/Rastix/releases) دریافت کنید. نصب‌کننده نسخهٔ unpackaged و قابل‌حمل برنامه را برای کاربر جاری در `%LOCALAPPDATA%\Programs\Rastix\0.1.1` نصب و میان‌بری در Start Menu ایجاد می‌کند. ثبت MSIX، Developer Mode، دسترسی مدیر یا نصب/اعتماد به گواهی لازم نیست. تنظیمات کنار برنامه در پوشهٔ `settings` نگه‌داری می‌شوند. پیش از حذف برنامه از تنظیمات پشتیبان بگیرید. میان‌بر **Uninstall Rastix** در Start Menu برنامه، پوشهٔ تنظیمات و ورودی PATH را حذف می‌کند. این نسخه ارتقای درجا را پشتیبانی نمی‌کند؛ برای نصب نسخهٔ جدید ابتدا نسخهٔ قبلی را حذف کنید.
 
-1. به [اجرای GitHub Actions راستیکس](https://github.com/Tiredb0y/Rastix/actions/workflows/rtl-build.yml) بروید، یک اجرای موفق را باز کنید و artifact با نام `Rastix-unsigned-MSIX` را دریافت کنید.
-2. فایل ZIP دریافت‌شده را استخراج کنید. اگر نسخهٔ توسعهٔ قبلی راستیکس نصب است، ابتدا برنامه را ببندید. هویت بسته `WindowsTerminalDev` است و از بستهٔ رسمی Windows Terminal جداست. پیش از ثبت build جدید، نسخهٔ توسعهٔ قبلی را حذف کنید (ممکن است شمارهٔ نسخهٔ بعضی buildها پایین‌تر باشد):
+فایل **Rastix-Portable-v0.1.1.zip** نیز برای همین انتشار در نظر گرفته شده است؛ آن را استخراج و `WindowsTerminal.exe` را اجرا کنید. نشانگر `.portable` تنظیمات را کنار برنامه نگه می‌دارد. نصب‌کننده مسیر برنامه را به `PATH` کاربر اضافه می‌کند تا در پنجره‌های ترمینال جدید، فرمان `rx` از هر پوشه‌ای اجرا شود؛ پس از نصب، پنجره‌های ترمینال باز را دوباره اجرا کنید. اگر نصب را دستی حذف می‌کنید، ورودی `%LOCALAPPDATA%\Programs\Rastix\0.1.1` را نیز از `PATH` کاربر پاک کنید.
 
-   ```powershell
-   Get-AppxPackage WindowsTerminalDev | Remove-AppxPackage
-   ```
+نصب‌کننده و ZIP هر دو **امضانشده** هستند. Windows SmartScreen ممکن است هشدار **Unknown publisher** نمایش دهد یا بر اساس اعتبار دانلود هشدار/محدودیت ایجاد کند. هیچ گواهی جعلی یا خودامضایی استفاده نشده است. این موضوع با خطای نصب MSIX قبلی تفاوت دارد: انتشار جدید MSIX را برای نصب یا اعتماد به ناشر ثبت نمی‌کند. برای نصب Rastix، SmartScreen یا حفاظت‌های امنیتی را غیرفعال نکنید؛ فقط در صورتی ادامه دهید که به منبع اعتماد دارید و hashهای انتشار را بررسی کرده‌اید. برای مقایسهٔ hashهای SHA-256 در PowerShell، این فرمان‌ها را در پوشهٔ فایل‌های دریافت‌شده اجرا کنید:
 
-   اگر تنظیماتی را لازم دارید، پیش از حذف از آن‌ها پشتیبان بگیرید. داده‌های کاربری بسته در مسیر `%LOCALAPPDATA%\Packages\WindowsTerminalDev_8wekyb3d8bbwe\LocalState` قرار دارد. این فرمان را برای حذف Windows Terminal رسمی Microsoft به‌کار نبرید.
-3. در PowerShell و از پوشهٔ استخراج‌شده، MSIX را باز و manifest آن را ثبت کنید:
+```powershell
+Get-FileHash .\Rastix-Setup-v0.1.1.exe, .\Rastix-Portable-v0.1.1.zip -Algorithm SHA256
+Get-Content .\SHA256SUMS.txt
+```
 
-   ```powershell
-   $msix = Get-ChildItem . -Filter *.msix -Recurse | Select-Object -First 1
-   if (-not $msix) { throw 'No MSIX found in the extracted artifact.' }
-   makeappx.exe unpack /p $msix.FullName /d .\Rastix-unpacked
-   Add-AppxPackage -Register .\Rastix-unpacked\AppxManifest.xml
-   ```
-
-   Developer Mode ویندوز و Windows SDK (ابزار `makeappx.exe`) لازم است. اگر `makeappx.exe` در `PATH` نیست، آن را از پوشهٔ نصب Windows SDK اجرا کنید. این بستهٔ توسعه امضا نشده است؛ فقط در صورتی نصبش کنید که به منبع و فایل ساخت اعتماد دارید.
-
-پس از نصب، راستیکس را با `rx` اجرا کنید. در File Explorer، نوشتن `rx` در نوار نشانی برنامه را در پوشهٔ فعلی باز می‌کند. همچنین می‌توانید از گزینهٔ منوی زمینه برای بازکردن پوشهٔ انتخاب‌شده استفاده کنید.
-
-**پیش‌نیاز:** Windows 10 نسخهٔ 2004 (ساخت 19041) یا جدیدتر. artifactهای GitHub Actions فایل‌های موقت ساخت هستند؛ انتشار امضاشده یا به‌روزرسانی خودکار محسوب نمی‌شوند.
+**پیش‌نیاز:** Windows 10 نسخهٔ 2004 (ساخت 19041) یا جدیدتر، x64. فایل EXE نصب‌کننده است، نه بستهٔ امضاشده یا دارای به‌روزرسانی خودکار.
 
 ## متن فارسی و PowerShell
 
@@ -120,7 +96,7 @@ $OutputEncoding = $utf8
 
 ## ساخت
 
-این مخزن workflow مربوط به ساخت MSIX امضانشده را در GitHub Actions دارد. وضعیت ساخت و artifactها در [اجرای workflow](https://github.com/Tiredb0y/Rastix/actions/workflows/rtl-build.yml) در دسترس‌اند. برای ساخت محلی از کد منبع، [راهنمای ساخت Windows Terminal](https://github.com/microsoft/terminal/blob/main/doc/building.md) پیش‌نیازهای عمومی را توضیح می‌دهد؛ workflow این مخزن مرجع تنظیمات ساخت CI راستیکس است.
+GitHub Actions یک بستهٔ بدون امضا را فقط به‌عنوان ورودی داخلی برای اسکریپت رسمی تولید چیدمان unpackaged می‌سازد، سپس آن را به فایل نصب EXE و ZIP قابل‌حمل تبدیل می‌کند؛ MSIX منتشر نمی‌شود. push کردن tagهایی با الگوی `rastix-v*` ساخت را اجرا کرده و EXE، ZIP و hashهای SHA-256 را به GitHub Release می‌افزاید. وضعیت CI در [اجرای workflow](https://github.com/Tiredb0y/Rastix/actions/workflows/rtl-build.yml) دیده می‌شود. برای ساخت محلی، [راهنمای ساخت Windows Terminal](https://github.com/microsoft/terminal/blob/main/doc/building.md) را ببینید.
 
 ## گزارش مشکل
 

@@ -24,7 +24,12 @@ $ErrorActionPreference = 'Stop'
 
 If (-not $MakePriPath) {
   $winSdk10Root = $(Get-ItemPropertyValue -Path "HKLM:\Software\Microsoft\Windows Kits\Installed Roots" -Name "KitsRoot10")
-  $MakePriPath = "$winSdk10Root\bin\10.0.26100.0\x64\MakePri.exe"
+  $sdkBin = Join-Path $winSdk10Root 'bin'
+  $sdk = Get-ChildItem $sdkBin -Directory | Where-Object {
+      $_.Name -match '^10\.0\.\d+\.0$' -and (Test-Path (Join-Path $_.FullName 'x64\MakePri.exe'))
+  } | Sort-Object { [version]$_.Name } -Descending | Select-Object -First 1
+  If (-not $sdk) { throw "No Windows SDK with x64 MakePri.exe was found under $sdkBin." }
+  $MakePriPath = Join-Path $sdk.FullName 'x64\MakePri.exe'
 }
 
 If ($null -Eq (Get-Item $MakePriPath -EA:SilentlyContinue)) {
@@ -38,6 +43,7 @@ New-Item -ItemType Directory -Path $tempDir | Out-Null
 $terminalDump = Join-Path $tempDir "terminal.pri.xml"
 
 & $MakePriPath dump /if (Join-Path $TerminalRoot "resources.pri") /of $terminalDump /dt detailed
+If ($LASTEXITCODE -Ne 0) { throw 'Could not dump Terminal resources.pri.' }
 
 Write-Verbose "Removing Microsoft.UI.Xaml node from Terminal to prevent a collision with XAML"
 $terminalXMLDocument = [xml](Get-Content $terminalDump)
