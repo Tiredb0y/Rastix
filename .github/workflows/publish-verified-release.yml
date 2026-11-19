@@ -31,8 +31,8 @@ jobs:
           $version = $Matches[1]
           $run = gh api "repos/$env:GH_REPO/actions/runs/$env:BUILD_RUN_ID" | ConvertFrom-Json
           if ($LASTEXITCODE -ne 0 -or $run.conclusion -ne 'success' -or $run.path -ne '.github/workflows/rtl-build.yml') { throw 'Expected a successful Rastix build' }
-          $draft = gh api "repos/$env:GH_REPO/releases/tags/$env:RELEASE_TAG" | ConvertFrom-Json
-          if ($LASTEXITCODE -ne 0 -or -not $draft.draft -or $draft.target_commitish -ne $run.head_sha) { throw 'Draft release must target the verified build commit' }
+          $draft = @(gh api "repos/$env:GH_REPO/releases?per_page=100" | ConvertFrom-Json | Where-Object tag_name -eq $env:RELEASE_TAG)
+          if ($LASTEXITCODE -ne 0 -or $draft.Count -ne 1 -or -not $draft[0].draft -or $draft[0].target_commitish -ne $run.head_sha) { throw 'Draft release must target the verified build commit' }
           $refs = @(gh api "repos/$env:GH_REPO/git/matching-refs/tags/$env:RELEASE_TAG" | ConvertFrom-Json | Where-Object ref -eq "refs/tags/$env:RELEASE_TAG")
           if ($LASTEXITCODE -ne 0 -or $refs.Count -gt 1) { throw 'Release tag lookup failed' }
           if ($refs.Count -eq 1 -and ($refs[0].object.type -ne 'commit' -or $refs[0].object.sha -ne $run.head_sha)) { throw 'Release tag must point to the verified build commit' }
@@ -52,8 +52,8 @@ jobs:
           if ((Get-Item $expected[0]).Length -lt 1000000) { throw 'Setup is unexpectedly small' }
           $process = Start-Process (Resolve-Path $expected[0]) -ArgumentList /verify -Wait -PassThru
           if ($process.ExitCode -ne 0) { throw 'Setup verification failed' }
-          $release = gh release view $env:RELEASE_TAG --json isDraft | ConvertFrom-Json
-          if ($LASTEXITCODE -ne 0 -or -not $release.isDraft) { throw 'Expected an existing draft release' }
+          $release = gh api "repos/$env:GH_REPO/releases/$($draft[0].id)" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or -not $release.draft) { throw 'Expected an existing draft release' }
           if ($refs.Count -eq 0) {
             gh api --method POST "repos/$env:GH_REPO/git/refs" -f "ref=refs/tags/$env:RELEASE_TAG" -f "sha=$($run.head_sha)"
             if ($LASTEXITCODE -ne 0) { throw 'Release tag creation failed' }
