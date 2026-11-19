@@ -1,4 +1,4 @@
-name: Build RTL Windows Terminal
+name: Build Rastix (RTL Windows Terminal)
 
 on:
   workflow_dispatch:
@@ -66,7 +66,7 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: WindowsTerminal-RTL-build-log
+          name: Rastix-build-log
           path: build-ci.log
           if-no-files-found: ignore
           retention-days: 7
@@ -74,7 +74,7 @@ jobs:
       - name: Upload MSIX
         uses: actions/upload-artifact@v4
         with:
-          name: WindowsTerminal-RTL-unsigned-MSIX
+          name: Rastix-unsigned-MSIX
           path: src/cascadia/CascadiaPackage/AppPackages/**/*.msix
           if-no-files-found: error
           retention-days: 7

@@ -4,7 +4,7 @@
 #pragma once
 
 constexpr std::wstring_view WtExe{ L"wt.exe" };
-constexpr std::wstring_view WtdExe{ L"wtd.exe" };
+constexpr std::wstring_view RxExe{ L"rx.exe" };
 constexpr std::wstring_view WindowsTerminalExe{ L"WindowsTerminal.exe" };
 constexpr std::wstring_view LocalAppDataAppsPath{ L"%LOCALAPPDATA%\\Microsoft\\WindowsApps\\" };
 constexpr std::wstring_view ElevateShimExe{ L"elevate-shim.exe" };
@@ -59,14 +59,14 @@ _TIL_INLINEPREFIX bool IsDevBuild()
 // Function Description:
 // - Helper function for getting the path to the appropriate executable to use
 //   for this instance of the shell extension. If we're running the dev build,
-//   it should be a `wtd.exe`, but if we're preview or release, we want to make
+//   it should be an `rx.exe`, but if we're preview or release, we want to make
 //   sure to get the correct `wt.exe` that corresponds to _us_.
 // - If we're unpackaged, this needs to get us `WindowsTerminal.exe`, because
 //   the `wt*exe` alias won't have been installed for this install.
 // Arguments:
 // - <none>
 // Return Value:
-// - the full path to the exe, one of `wt.exe`, `wtd.exe`, or `WindowsTerminal.exe`.
+// - the full path to the exe, one of `wt.exe`, `rx.exe`, or `WindowsTerminal.exe`.
 _TIL_INLINEPREFIX const std::wstring& GetWtExePath()
 {
     static const auto exePath = []() -> std::wstring {
@@ -88,7 +88,7 @@ _TIL_INLINEPREFIX const std::wstring& GetWtExePath()
                 if (!pfn.empty())
                 {
                     const std::filesystem::path windowsAppsPath{ wil::ExpandEnvironmentStringsW<std::wstring>(LocalAppDataAppsPath.data()) };
-                    const auto wtPath = windowsAppsPath / std::wstring_view{ pfn } / (IsDevBuild() ? WtdExe : WtExe);
+                    const auto wtPath = windowsAppsPath / std::wstring_view{ pfn } / (IsDevBuild() ? RxExe : WtExe);
                     return wtPath;
                 }
             }
