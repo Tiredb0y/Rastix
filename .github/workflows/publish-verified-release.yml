@@ -1,0 +1,57 @@
+name: Publish verified Rastix release
+on:
+  push:
+    branches: [rtl-build]
+    paths: [.github/workflows/publish-verified-release.yml]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: Successful Windows build run ID
+        required: true
+        type: string
+permissions:
+  actions: read
+  contents: write
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - name: Verify build and publish artifacts
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          BUILD_RUN_ID: ${{ inputs.run_id || '44549201944' }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:BUILD_RUN_ID -notmatch '^\d+$') { throw 'Invalid run ID' }
+          $run = gh api "repos/$env:GH_REPO/actions/runs/$env:BUILD_RUN_ID" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $run.conclusion -ne 'success' -or $run.path -ne '.github/workflows/rtl-build.yml') { throw 'Expected a successful Rastix build' }
+          if ($run.head_sha -ne '900e172fb7bbb9ab703100717f72a2ab10dc05ad') { throw 'Build source is not the reviewed release commit' }
+          gh run download $env:BUILD_RUN_ID --name Rastix-Windows-x64 --dir release
+          if ($LASTEXITCODE -ne 0) { throw 'Artifact download failed' }
+          Set-Location release
+          $expected = @('Rastix-Setup-v0.1.1.exe', 'Rastix-Portable-v0.1.1.zip')
+          $entries = @(Get-Content SHA256SUMS.txt)
+          if ($entries.Count -ne 2) { throw 'Expected two checksums' }
+          $seen = @()
+          foreach ($entry in $entries) {
+            $parts = $entry -split '  ',2
+            if ($parts.Length -ne 2 -or $parts[1] -notin $expected -or $parts[1] -in $seen) { throw 'Unexpected checksum entry' }
+            $seen += $parts[1]
+            if ((Get-FileHash $parts[1] -Algorithm SHA256).Hash -ne $parts[0]) { throw 'Checksum mismatch' }
+          }
+          if ((Get-Item $expected[0]).Length -lt 1000000) { throw 'Setup is unexpectedly small' }
+          $process = Start-Process (Resolve-Path $expected[0]) -ArgumentList /verify -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw 'Setup verification failed' }
+          $release = gh release view rastix-v0.1.1 --json isDraft | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or -not $release.isDraft) { throw 'Expected an existing draft release' }
+          gh release upload rastix-v0.1.1 @expected SHA256SUMS.txt --clobber
+          if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }
+          $assets = gh release view rastix-v0.1.1 --json assets | ConvertFrom-Json
+          foreach ($name in ($expected + @('SHA256SUMS.txt'))) {
+            $asset = @($assets.assets | Where-Object name -eq $name)
+            if ($asset.Count -ne 1 -or $asset[0].size -ne (Get-Item $name).Length) { throw "Incomplete asset: $name" }
+          }
+          gh release edit rastix-v0.1.1 --draft=false
+          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }
