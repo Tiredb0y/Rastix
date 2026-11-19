@@ -1,12 +1,13 @@
 name: Publish verified Rastix release
 on:
-  push:
-    branches: [rtl-build]
-    paths: [.github/workflows/publish-verified-release.yml]
   workflow_dispatch:
     inputs:
       run_id:
         description: Successful Windows build run ID
+        required: true
+        type: string
+      release_tag:
+        description: Existing draft release tag (rastix-vMAJOR.MINOR.PATCH)
         required: true
         type: string
 permissions:
@@ -21,17 +22,21 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-          BUILD_RUN_ID: ${{ inputs.run_id || '44549201944' }}
+          BUILD_RUN_ID: ${{ inputs.run_id }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           $ErrorActionPreference = 'Stop'
           if ($env:BUILD_RUN_ID -notmatch '^\d+$') { throw 'Invalid run ID' }
+          if ($env:RELEASE_TAG -notmatch '^rastix-v(\d+\.\d+\.\d+)$') { throw 'Invalid release tag' }
+          $version = $Matches[1]
           $run = gh api "repos/$env:GH_REPO/actions/runs/$env:BUILD_RUN_ID" | ConvertFrom-Json
           if ($LASTEXITCODE -ne 0 -or $run.conclusion -ne 'success' -or $run.path -ne '.github/workflows/rtl-build.yml') { throw 'Expected a successful Rastix build' }
-          if ($run.head_sha -ne '900e172fb7bbb9ab703100717f72a2ab10dc05ad') { throw 'Build source is not the reviewed release commit' }
+          $tag = gh api "repos/$env:GH_REPO/git/ref/tags/$env:RELEASE_TAG" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $tag.object.type -ne 'commit' -or $tag.object.sha -ne $run.head_sha) { throw 'Release tag must point to the verified build commit' }
           gh run download $env:BUILD_RUN_ID --name Rastix-Windows-x64 --dir release
           if ($LASTEXITCODE -ne 0) { throw 'Artifact download failed' }
           Set-Location release
-          $expected = @('Rastix-Setup-v0.1.1.exe', 'Rastix-Portable-v0.1.1.zip')
+          $expected = @("Rastix-Setup-v$version.exe", "Rastix-Portable-v$version.zip")
           $entries = @(Get-Content SHA256SUMS.txt)
           if ($entries.Count -ne 2) { throw 'Expected two checksums' }
           $seen = @()
@@ -44,14 +49,15 @@ jobs:
           if ((Get-Item $expected[0]).Length -lt 1000000) { throw 'Setup is unexpectedly small' }
           $process = Start-Process (Resolve-Path $expected[0]) -ArgumentList /verify -Wait -PassThru
           if ($process.ExitCode -ne 0) { throw 'Setup verification failed' }
-          $release = gh release view rastix-v0.1.1 --json isDraft | ConvertFrom-Json
+          $release = gh release view $env:RELEASE_TAG --json isDraft | ConvertFrom-Json
           if ($LASTEXITCODE -ne 0 -or -not $release.isDraft) { throw 'Expected an existing draft release' }
-          gh release upload rastix-v0.1.1 @expected SHA256SUMS.txt --clobber
+          gh release upload $env:RELEASE_TAG @expected SHA256SUMS.txt --clobber
           if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }
-          $assets = gh release view rastix-v0.1.1 --json assets | ConvertFrom-Json
+          $assets = gh release view $env:RELEASE_TAG --json assets | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw 'Release asset lookup failed' }
           foreach ($name in ($expected + @('SHA256SUMS.txt'))) {
             $asset = @($assets.assets | Where-Object name -eq $name)
             if ($asset.Count -ne 1 -or $asset[0].size -ne (Get-Item $name).Length) { throw "Incomplete asset: $name" }
           }
-          gh release edit rastix-v0.1.1 --draft=false
+          gh release edit $env:RELEASE_TAG --draft=false
           if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }
