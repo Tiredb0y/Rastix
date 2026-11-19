@@ -13,14 +13,14 @@ Rastix is not an official Microsoft product or release. RTL rendering and editin
 
 ## Download and install
 
-When the `rastix-v0.1.1` release is published, download **Rastix-Setup-v0.1.1.exe** from [GitHub Releases](https://github.com/Tiredb0y/Rastix/releases). The setup installs the unpackaged portable layout for the current user under `%LOCALAPPDATA%\Programs\Rastix\0.1.1` and creates a Start menu shortcut. It does not register an MSIX, require Developer Mode, elevate, or install/trust a certificate. Settings are stored in the installation's `settings` folder; back up that folder before uninstalling. Use the **Uninstall Rastix** Start menu shortcut to remove the app, its settings folder, and the PATH entry. This release does not yet support in-place upgrades; uninstall an older version before installing a newer one.
+Download **Rastix-Setup-v0.1.2.exe** from [GitHub Releases](https://github.com/Tiredb0y/Rastix/releases/tag/rastix-v0.1.2). The setup installs the unpackaged portable layout for the current user under `%LOCALAPPDATA%\Programs\Rastix\0.1.2` and creates a Start menu shortcut. It does not register an MSIX, require Developer Mode, elevate, or install/trust a certificate. Settings are stored in the installation's `settings` folder; back up that folder before uninstalling. Use the **Uninstall Rastix** Start menu shortcut to remove the app, its settings folder, and the PATH entry. This release does not yet support in-place upgrades; uninstall an older version before installing a newer one.
 
-A **Rastix-Portable-v0.1.1.zip** is planned for the same release; extract it and run `WindowsTerminal.exe`. Its `.portable` marker makes settings stay beside the app. The installer also adds its folder to your user `PATH`, so new terminals can launch `rx` from any directory; restart existing terminals after installation. If you remove the install manually, also remove its `%LOCALAPPDATA%\Programs\Rastix\0.1.1` entry from your user PATH.
+For **Rastix-Portable-v0.1.2.zip**, extract it and run `WindowsTerminal.exe`. Its `.portable` marker makes settings stay beside the app. The installer also adds its folder to your user `PATH`, so new terminals can launch `rx` from any directory; restart existing terminals after installation. If you remove the install manually, also remove its `%LOCALAPPDATA%\Programs\Rastix\0.1.2` entry from your user PATH.
 
 Both the setup EXE and portable ZIP are **unsigned**. Windows SmartScreen may show an **Unknown publisher** warning, and reputation-based protection may block or warn about first-time downloads. No fake or self-signed certificate is used. This is separate from the prior unsigned MSIX installation issue: the public release no longer asks Windows to trust/register an MSIX publisher. Do not disable SmartScreen or security protections just to install Rastix; only continue if you trust the source and have verified the release hashes. To compare the published SHA-256 values in PowerShell, run this from the folder containing the downloaded files and `SHA256SUMS.txt`:
 
 ```powershell
-Get-FileHash .\Rastix-Setup-v0.1.1.exe, .\Rastix-Portable-v0.1.1.zip -Algorithm SHA256
+Get-FileHash .\Rastix-Setup-v0.1.2.exe, .\Rastix-Portable-v0.1.2.zip -Algorithm SHA256
 Get-Content .\SHA256SUMS.txt
 ```
 
@@ -28,7 +28,7 @@ Get-Content .\SHA256SUMS.txt
 
 ## Persian text and PowerShell
 
-RTL display, Arabic/Persian letter shaping, cursor movement, selection, and command-line editing are related but distinct behaviors. Results may differ across shell applications and input methods. Windows PowerShell 5.1 may also use a legacy code page. To use UTF-8 in that shell, you can configure its profile or the relevant Terminal profile to run:
+RTL display, Arabic/Persian letter shaping, cursor movement, selection, and command-line editing are related but distinct behaviors. Results may differ across shell applications and input methods. From 0.1.2, the default Windows PowerShell profile initializes UTF-8 so PSReadLine can display Persian instead of question marks on systems using a legacy code page. Existing customized profiles may need the same configuration:
 
 ```powershell
 $utf8 = [System.Text.UTF8Encoding]::new($false)
@@ -68,14 +68,14 @@ Rastix is based on [Microsoft's Windows Terminal](https://github.com/microsoft/t
 
 ## دریافت و نصب
 
-پس از انتشار نسخهٔ `rastix-v0.1.1`، فایل **Rastix-Setup-v0.1.1.exe** را از [GitHub Releases](https://github.com/Tiredb0y/Rastix/releases) دریافت کنید. نصب‌کننده نسخهٔ unpackaged و قابل‌حمل برنامه را برای کاربر جاری در `%LOCALAPPDATA%\Programs\Rastix\0.1.1` نصب و میان‌بری در Start Menu ایجاد می‌کند. ثبت MSIX، Developer Mode، دسترسی مدیر یا نصب/اعتماد به گواهی لازم نیست. تنظیمات کنار برنامه در پوشهٔ `settings` نگه‌داری می‌شوند. پیش از حذف برنامه از تنظیمات پشتیبان بگیرید. میان‌بر **Uninstall Rastix** در Start Menu برنامه، پوشهٔ تنظیمات و ورودی PATH را حذف می‌کند. این نسخه ارتقای درجا را پشتیبانی نمی‌کند؛ برای نصب نسخهٔ جدید ابتدا نسخهٔ قبلی را حذف کنید.
+فایل **Rastix-Setup-v0.1.2.exe** را از [GitHub Releases](https://github.com/Tiredb0y/Rastix/releases/tag/rastix-v0.1.2) دریافت کنید. نصب‌کننده نسخهٔ unpackaged و قابل‌حمل برنامه را برای کاربر جاری در `%LOCALAPPDATA%\Programs\Rastix\0.1.2` نصب و میان‌بری در Start Menu ایجاد می‌کند. ثبت MSIX، Developer Mode، دسترسی مدیر یا نصب/اعتماد به گواهی لازم نیست. تنظیمات کنار برنامه در پوشهٔ `settings` نگه‌داری می‌شوند. پیش از حذف برنامه از تنظیمات پشتیبان بگیرید. میان‌بر **Uninstall Rastix** در Start Menu برنامه، پوشهٔ تنظیمات و ورودی PATH را حذف می‌کند. این نسخه ارتقای درجا را پشتیبانی نمی‌کند؛ برای نصب نسخهٔ جدید ابتدا نسخهٔ قبلی را حذف کنید.
 
-فایل **Rastix-Portable-v0.1.1.zip** نیز برای همین انتشار در نظر گرفته شده است؛ آن را استخراج و `WindowsTerminal.exe` را اجرا کنید. نشانگر `.portable` تنظیمات را کنار برنامه نگه می‌دارد. نصب‌کننده مسیر برنامه را به `PATH` کاربر اضافه می‌کند تا در پنجره‌های ترمینال جدید، فرمان `rx` از هر پوشه‌ای اجرا شود؛ پس از نصب، پنجره‌های ترمینال باز را دوباره اجرا کنید. اگر نصب را دستی حذف می‌کنید، ورودی `%LOCALAPPDATA%\Programs\Rastix\0.1.1` را نیز از `PATH` کاربر پاک کنید.
+فایل **Rastix-Portable-v0.1.2.zip** را استخراج و `WindowsTerminal.exe` را اجرا کنید. نشانگر `.portable` تنظیمات را کنار برنامه نگه می‌دارد. نصب‌کننده مسیر برنامه را به `PATH` کاربر اضافه می‌کند تا در پنجره‌های ترمینال جدید، فرمان `rx` از هر پوشه‌ای اجرا شود؛ پس از نصب، پنجره‌های ترمینال باز را دوباره اجرا کنید. اگر نصب را دستی حذف می‌کنید، ورودی `%LOCALAPPDATA%\Programs\Rastix\0.1.2` را نیز از `PATH` کاربر پاک کنید.
 
 نصب‌کننده و ZIP هر دو **امضانشده** هستند. Windows SmartScreen ممکن است هشدار **Unknown publisher** نمایش دهد یا بر اساس اعتبار دانلود هشدار/محدودیت ایجاد کند. هیچ گواهی جعلی یا خودامضایی استفاده نشده است. این موضوع با خطای نصب MSIX قبلی تفاوت دارد: انتشار جدید MSIX را برای نصب یا اعتماد به ناشر ثبت نمی‌کند. برای نصب Rastix، SmartScreen یا حفاظت‌های امنیتی را غیرفعال نکنید؛ فقط در صورتی ادامه دهید که به منبع اعتماد دارید و hashهای انتشار را بررسی کرده‌اید. برای مقایسهٔ hashهای SHA-256 در PowerShell، این فرمان‌ها را در پوشهٔ فایل‌های دریافت‌شده اجرا کنید:
 
 ```powershell
-Get-FileHash .\Rastix-Setup-v0.1.1.exe, .\Rastix-Portable-v0.1.1.zip -Algorithm SHA256
+Get-FileHash .\Rastix-Setup-v0.1.2.exe, .\Rastix-Portable-v0.1.2.zip -Algorithm SHA256
 Get-Content .\SHA256SUMS.txt
 ```
 
@@ -83,7 +83,7 @@ Get-Content .\SHA256SUMS.txt
 
 ## متن فارسی و PowerShell
 
-نمایش RTL، شکل‌دهی حروف فارسی/عربی، حرکت مکان‌نما، انتخاب متن و ویرایش خط فرمان رفتارهای مرتبط اما جداگانه‌اند. نتیجه ممکن است در پوسته‌ها و روش‌های ورود متن مختلف فرق کند. Windows PowerShell 5.1 نیز ممکن است از code page قدیمی استفاده کند. برای فعال‌کردن UTF-8 در آن، می‌توانید در پروفایل PowerShell یا پروفایل مربوط در Terminal این دستورها را اجرا کنید:
+نمایش RTL، شکل‌دهی حروف فارسی/عربی، حرکت مکان‌نما، انتخاب متن و ویرایش خط فرمان رفتارهای مرتبط اما جداگانه‌اند. نتیجه ممکن است در پوسته‌ها و روش‌های ورود متن مختلف فرق کند. از نسخهٔ 0.1.2، پروفایل پیش‌فرض Windows PowerShell کدگذاری UTF-8 را فعال می‌کند تا PSReadLine در سیستم‌های دارای code page قدیمی، فارسی را به‌جای علامت سؤال نمایش دهد. پروفایل‌های سفارشی قبلی ممکن است به همین تنظیم نیاز داشته باشند:
 
 ```powershell
 $utf8 = [System.Text.UTF8Encoding]::new($false)

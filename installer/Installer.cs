@@ -116,6 +116,7 @@ internal static class Installer
         public SetupForm()
         {
             Text = "Install Rastix";
+            AutoScaleDimensions = new SizeF(96, 96);
             AutoScaleMode = AutoScaleMode.Dpi;
             ClientSize = new Size(510, 320);
             MinimumSize = Size;
