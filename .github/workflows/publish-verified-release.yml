@@ -34,8 +34,8 @@ jobs:
           $draft = @(gh api "repos/$env:GH_REPO/releases?per_page=100" | ConvertFrom-Json | Where-Object tag_name -eq $env:RELEASE_TAG)
           if ($LASTEXITCODE -ne 0 -or $draft.Count -ne 1 -or -not $draft[0].draft -or $draft[0].target_commitish -ne $run.head_sha) { throw 'Draft release must target the verified build commit' }
           $refs = @(gh api "repos/$env:GH_REPO/git/matching-refs/tags/$env:RELEASE_TAG" | ConvertFrom-Json | Where-Object ref -eq "refs/tags/$env:RELEASE_TAG")
-          if ($LASTEXITCODE -ne 0 -or $refs.Count -gt 1) { throw 'Release tag lookup failed' }
-          if ($refs.Count -eq 1 -and ($refs[0].object.type -ne 'commit' -or $refs[0].object.sha -ne $run.head_sha)) { throw 'Release tag must point to the verified build commit' }
+          if ($LASTEXITCODE -ne 0 -or $refs.Count -ne 1) { throw 'Expected an existing release tag' }
+          if ($refs[0].object.type -ne 'commit' -or $refs[0].object.sha -ne $run.head_sha) { throw 'Release tag must point to the verified build commit' }
           gh run download $env:BUILD_RUN_ID --name Rastix-Windows-x64 --dir release
           if ($LASTEXITCODE -ne 0) { throw 'Artifact download failed' }
           Set-Location release
@@ -54,10 +54,6 @@ jobs:
           if ($process.ExitCode -ne 0) { throw 'Setup verification failed' }
           $release = gh api "repos/$env:GH_REPO/releases/$($draft[0].id)" | ConvertFrom-Json
           if ($LASTEXITCODE -ne 0 -or -not $release.draft) { throw 'Expected an existing draft release' }
-          if ($refs.Count -eq 0) {
-            gh api --method POST "repos/$env:GH_REPO/git/refs" -f "ref=refs/tags/$env:RELEASE_TAG" -f "sha=$($run.head_sha)"
-            if ($LASTEXITCODE -ne 0) { throw 'Release tag creation failed' }
-          }
           gh release upload $env:RELEASE_TAG @expected SHA256SUMS.txt --clobber
           if ($LASTEXITCODE -ne 0) { throw 'Release upload failed' }
           $assets = gh release view $env:RELEASE_TAG --json assets | ConvertFrom-Json
