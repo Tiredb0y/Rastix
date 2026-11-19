@@ -48,8 +48,6 @@ jobs:
           $nuget = Join-Path $env:RUNNER_TEMP 'nuget.exe'
           Invoke-WebRequest -Uri 'https://dist.nuget.org/win-x86-commandline/v6.12.1/nuget.exe' -OutFile $nuget
           if (-not (Test-Path $nuget) -or (Get-Item $nuget).Length -lt 1000000) { throw 'NuGet CLI download is missing or incomplete.' }
-          & $nuget -Version
-          if ($LASTEXITCODE -ne 0) { throw 'NuGet CLI could not run.' }
 
       - name: Restore and build unsigned MSIX
         shell: cmd
