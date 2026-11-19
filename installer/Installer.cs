@@ -10,12 +10,12 @@ using System.Windows.Forms;
 [assembly: AssemblyDescription("Rastix portable Windows Terminal installer")]
 [assembly: AssemblyCompany("Rastix Project")]
 [assembly: AssemblyProduct("Rastix")]
-[assembly: AssemblyVersion("0.1.1.0")]
-[assembly: AssemblyFileVersion("0.1.1.0")]
+[assembly: AssemblyVersion("0.1.2.0")]
+[assembly: AssemblyFileVersion("0.1.2.0")]
 
 internal static class Installer
 {
-    private const string Version = "0.1.1";
+    private const string Version = "0.1.2";
     private const string PayloadResource = "RastixInstaller.Payload.zip";
 
     [STAThread]
@@ -116,9 +116,9 @@ internal static class Installer
         public SetupForm()
         {
             Text = "Install Rastix";
-            Width = 510;
-            Height = 300;
-            MinimumSize = new Size(510, 300);
+            AutoScaleMode = AutoScaleMode.Dpi;
+            ClientSize = new Size(510, 320);
+            MinimumSize = Size;
             StartPosition = FormStartPosition.CenterScreen;
             FormBorderStyle = FormBorderStyle.FixedDialog;
             MaximizeBox = false;
@@ -133,16 +133,17 @@ internal static class Installer
             Controls.Add(details);
 
             _status = new Label { Text = "Version " + Version };
-            _status.SetBounds(24, 211, 320, 24);
+            _status.SetBounds(24, 210, 462, 32);
+            _status.AutoEllipsis = true;
             Controls.Add(_status);
 
             Button cancel = new Button { Text = "Cancel" };
-            cancel.SetBounds(366, 220, 95, 30);
+            cancel.SetBounds(381, 266, 105, 32);
             cancel.Click += delegate { Close(); };
             Controls.Add(cancel);
 
             _install = new Button { Text = "Install" };
-            _install.SetBounds(261, 220, 95, 30);
+            _install.SetBounds(266, 266, 105, 32);
             _install.Click += InstallClicked;
             Controls.Add(_install);
             AcceptButton = _install;
@@ -179,7 +180,7 @@ internal static class Installer
                         Directory.Move(stagedApp, target);
                         uninstallExe = Path.Combine(target, "Rastix-Uninstall.exe");
                         string shortcut = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "Rastix.lnk");
-                        try { CreateShortcut(shortcut, Path.Combine(target, "WindowsTerminal.exe"), target); }
+                        try { CreateShortcut(shortcut, Path.Combine(target, "WindowsTerminal.exe"), Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)); }
                         catch (Exception shortcutError) { MessageBox.Show("Rastix files were installed, but the Start menu shortcut could not be created. Launch WindowsTerminal.exe from:\r\n" + target + "\r\n\r\n" + shortcutError.Message, "Rastix Setup", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
                         try { CreateShortcut(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Programs), "Uninstall Rastix.lnk"), uninstallExe, target); }
                         catch (Exception shortcutError) { MessageBox.Show("Could not create the uninstall shortcut. Run Rastix-Uninstall.exe from this folder to remove Rastix and its PATH entry:\r\n" + target + "\r\n\r\n" + shortcutError.Message, "Rastix Setup", MessageBoxButtons.OK, MessageBoxIcon.Warning); }
@@ -191,7 +192,7 @@ internal static class Installer
 
                 _status.Text = "Rastix installed successfully.";
                 DialogResult launch = MessageBox.Show("Rastix is installed. Use the Start menu shortcut, or open WindowsTerminal.exe from:\r\n" + target + "\r\n\r\nThe setup is unsigned; Windows may show a SmartScreen Unknown publisher warning when you run it.\r\n\r\nLaunch Rastix now?", "Rastix Setup", MessageBoxButtons.YesNo, MessageBoxIcon.Information);
-                if (launch == DialogResult.Yes) System.Diagnostics.Process.Start(Path.Combine(target, "WindowsTerminal.exe"));
+                if (launch == DialogResult.Yes) System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Path.Combine(target, "WindowsTerminal.exe")) { WorkingDirectory = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) });
                 Close();
             }
             catch (Exception ex)

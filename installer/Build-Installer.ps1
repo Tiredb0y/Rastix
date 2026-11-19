@@ -1,7 +1,7 @@
 $ErrorActionPreference = 'Stop'
 # Do not leave hashes or artifacts from an earlier successful run after a failure.
 $repo = (Resolve-Path (Join-Path $PSScriptRoot '..')).Path
-$version = '0.1.1'
+$version = '0.1.2'
 $packageRoot = Join-Path $repo 'src\cascadia\CascadiaPackage\AppPackages'
 $outputRoot = Join-Path $repo 'out\release'
 $payloadRoot = Join-Path $outputRoot 'payload'
@@ -15,7 +15,7 @@ if (-not (Test-Path $packageRoot)) { throw "Build the Release x64 package first;
 Remove-Item -Recurse -Force $payloadRoot, $unpackedRoot -ErrorAction SilentlyContinue
 New-Item -ItemType Directory -Force -Path $payloadRoot, $unpackedRoot | Out-Null
 
-$packageVersion = '0.1.1.0'
+$packageVersion = '0.1.2.0'
 $msix = Get-ChildItem $packageRoot -Filter '*.msix' -Recurse | Where-Object { $_.Name -match "_$([regex]::Escape($packageVersion))_x64\.msix$" } | Select-Object -First 1
 if (-not $msix) { throw "Could not find the unsigned x64 MSIX under $packageRoot" }
 $xaml = Get-ChildItem (Join-Path $repo 'src\cascadia\CascadiaPackage\AppPackages') -Filter 'Microsoft.UI.Xaml*.appx' -Recurse | Where-Object { $_.FullName -match '\\Dependencies\\x64\\' } | Select-Object -First 1

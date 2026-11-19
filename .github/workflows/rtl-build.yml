@@ -79,6 +79,17 @@ jobs:
           type build-ci.log
           exit /b %BUILD_EXIT%
 
+      - name: Build and run Unicode keyboard regression tests
+        shell: cmd
+        run: |
+          call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\Common7\Tools\VsDevCmd.bat" -arch=x64 -host_arch=x64
+          if errorlevel 1 exit /b %ERRORLEVEL%
+          set "VcpkgRoot=%GITHUB_WORKSPACE%\dep\vcpkg"
+          msbuild.exe src\terminal\adapter\ut_adapter\Adapter.UnitTests.vcxproj /p:SolutionDir=%GITHUB_WORKSPACE%\ /p:Configuration=Release /p:Platform=x64 /m /v:minimal >> build-ci.log 2>&1
+          if errorlevel 1 exit /b %ERRORLEVEL%
+          bin\x64\Release\te.exe bin\x64\Release\ConAdapter.Unit.Tests.dll /name:*KittyKeyboardProtocolTests* /inproc
+          exit /b %ERRORLEVEL%
+
       - name: Build and verify unsigned Rastix installer and portable ZIP
         shell: pwsh
         run: ./installer/Build-Installer.ps1

@@ -10,8 +10,8 @@ using System.Windows.Forms;
 [assembly: AssemblyDescription("Rastix uninstaller")]
 [assembly: AssemblyCompany("Rastix Project")]
 [assembly: AssemblyProduct("Rastix")]
-[assembly: AssemblyVersion("0.1.1.0")]
-[assembly: AssemblyFileVersion("0.1.1.0")]
+[assembly: AssemblyVersion("0.1.2.0")]
+[assembly: AssemblyFileVersion("0.1.2.0")]
 
 internal static class Uninstaller
 {
@@ -21,7 +21,7 @@ internal static class Uninstaller
         try
         {
             string installDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            string expectedDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Rastix", "0.1.1");
+            string expectedDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "Rastix", "0.1.2");
             if (!String.Equals(Path.GetFullPath(installDirectory), Path.GetFullPath(expectedDirectory), StringComparison.OrdinalIgnoreCase) ||
                 !File.Exists(Path.Combine(installDirectory, ".portable")) || !File.Exists(Path.Combine(installDirectory, "WindowsTerminal.exe")))
                 throw new InvalidOperationException("Run the uninstaller from its original Rastix installation folder: " + expectedDirectory);

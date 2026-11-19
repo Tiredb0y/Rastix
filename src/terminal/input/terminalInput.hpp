@@ -3,6 +3,8 @@
 
 #pragma once
 
+class KittyKeyboardProtocolTests;
+
 namespace Microsoft::Console::VirtualTerminal
 {
     class TerminalInput final
@@ -90,6 +92,8 @@ namespace Microsoft::Console::VirtualTerminal
 #pragma endregion
 
     private:
+        friend class ::KittyKeyboardProtocolTests;
+
         struct CodepointBuffer
         {
 #pragma warning(suppress : 26495) // Variable '...' is uninitialized. Always initialize a member variable (type.6).

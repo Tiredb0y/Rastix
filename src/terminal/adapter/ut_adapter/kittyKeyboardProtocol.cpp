@@ -285,6 +285,29 @@ class KittyKeyboardProtocolTests
         VERIFY_ARE_EQUAL(TerminalInput::MakeOutput(L"\x1b[97u"), process(input, true, 'A', 0x1E, L'a', 0)); // new press
     }
 
+    TEST_METHOD(UnicodeKeyCaseMapping)
+    {
+        for (const auto ch : std::wstring_view{ L"\u0633\u0644\u0627\u0645" })
+        {
+            VERIFY_ARE_EQUAL(static_cast<uint32_t>(ch), TerminalInput::_codepointToLower(ch));
+        }
+        VERIFY_ARE_EQUAL(0x00e9u, TerminalInput::_codepointToLower(0x00c9u)); // E acute
+        VERIFY_ARE_EQUAL(0x03b1u, TerminalInput::_codepointToLower(0x0391u)); // Greek alpha
+        VERIFY_ARE_EQUAL(0x1f600u, TerminalInput::_codepointToLower(0x1f600u)); // Surrogate pair
+        VERIFY_ARE_EQUAL(static_cast<uint32_t>('a'), TerminalInput::_codepointToLower('A'));
+    }
+
+    TEST_METHOD(UnmappedKeyReleaseDoesNotInsertText)
+    {
+        auto input = createInput(D | E | A);
+        // Unknown virtual keys cannot be translated to a Kitty base key. A release
+        // must still be ignored instead of falling back to emitting its UnicodeChar.
+        for (const auto ch : std::wstring_view{ L"\u0633\u0644\u0627\u0645\u00e9" })
+        {
+            VERIFY_ARE_EQUAL(TerminalInput::MakeOutput({}), process(input, false, 0xff, 0, ch, 0));
+        }
+    }
+
     TEST_METHOD(KeyRepeatWithModifiers)
     {
         auto input = createInput(E | K);

@@ -351,8 +351,9 @@ TerminalInput::OutputType TerminalInput::HandleKey(const INPUT_RECORD& event)
     }
 
     std::wstring seq;
-    if (!_formatEncodingHelper(enc, seq))
+    if (!_formatEncodingHelper(enc, seq) && key.keyDown)
     {
+        // A release that cannot be encoded must never fall back to inserting text.
         _formatFallback(kbd, enc, key, seq);
     }
     return seq;
@@ -1311,9 +1312,9 @@ TerminalInput::CodepointBuffer::CodepointBuffer(uint32_t cp) noexcept
 void TerminalInput::CodepointBuffer::convertLowercase() noexcept
 {
     // NOTE: MSDN states that `lpSrcStr == lpDestStr` is valid for LCMAP_LOWERCASE.
+    // An explicit source length excludes the null terminator from the return value.
+    // Subtracting one drops a UTF-16 code unit and makes non-ASCII keys invalid.
     len = LCMapStringW(LOCALE_INVARIANT, LCMAP_LOWERCASE, &buf[0], len, &buf[0], ARRAYSIZE(buf));
-    // NOTE: LCMapStringW returns the length including the null terminator.
-    len -= 1;
 }
 
 uint32_t TerminalInput::CodepointBuffer::asSingleCodepoint() const noexcept

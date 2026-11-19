@@ -26,7 +26,7 @@ foreach ($case in $cases) {
     try {
         foreach ($file in $required) {
             if (($case -eq 'missing-rx' -and $file -eq 'rx.exe') -or ($case -eq 'missing-xaml' -and $file -eq 'Microsoft.UI.Xaml.dll') -or ($case -eq 'missing-marker' -and $file -eq '.portable') -or ($case -eq 'missing-pri' -and $file -eq 'resources.pri')) { continue }
-            $null = $archive.CreateEntry('terminal-0.1.1.0/' + $file)
+            $null = $archive.CreateEntry('terminal-0.1.2.0/' + $file)
         }
         if ($case -eq 'duplicate-exe') { $null = $archive.CreateEntry('another/WindowsTerminal.exe') }
         if ($case -eq 'traversal') { $null = $archive.CreateEntry('../escape.txt') }
@@ -42,6 +42,6 @@ foreach ($case in $cases) {
     "PASS: /verify $case (exit $expected)"
 }
 [xml]$manifest = Get-Content (Join-Path $repo 'src\cascadia\CascadiaPackage\Package-Dev.appxmanifest')
-if ($manifest.Package.Identity.Name -ne 'Rastix' -or $manifest.Package.Identity.Version -ne '0.1.1.0') { throw 'Unexpected manifest identity/version' }
+if ($manifest.Package.Identity.Name -ne 'Rastix' -or $manifest.Package.Identity.Version -ne '0.1.2.0') { throw 'Unexpected manifest identity/version' }
 'PASS: Manifest XML/identity/version'
 "Fixture outputs (not release files): $testRoot"
